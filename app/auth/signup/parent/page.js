@@ -4,12 +4,16 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
-import { createClientBrowser } from "@/lib/supabase/client";
+import { createBrowserClient } from "@supabase/ssr";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function ParentSignup() {
-  const supabase = createClientBrowser();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
   const searchParams = useSearchParams();
   const childDob = searchParams.get("childDob");
 
@@ -85,24 +89,23 @@ export default function ParentSignup() {
     }
 
     // 3. Log them in
-const { error: loginError } = await supabase.auth.signInWithPassword({
-  email: form.email,
-  password: form.password,
-});
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
 
-if (loginError) {
-  setSubmitError(loginError.message);
-  return;
-}
+    if (loginError) {
+      setSubmitError(loginError.message);
+      return;
+    }
 
-// ⭐ FIX: Ensure role metadata is set on the active session
-await supabase.auth.updateUser({
-  data: { role: "parent" },
-});
+    // 4. Ensure role metadata is set on the active session
+    await supabase.auth.updateUser({
+      data: { role: "parent" },
+    });
 
-// 4. Redirect to callback
-window.location.href = `/auth/callback`;
-
+    // 5. Redirect to callback
+    window.location.href = `/auth/callback`;
   }
 
   return (
@@ -132,7 +135,7 @@ window.location.href = `/auth/callback`;
       {/* Glass Card */}
       <div className="w-full max-w-md bg-black/40 backdrop-blur-md rounded-2xl p-10 shadow-xl border border-white/10 animate-fadeIn">
 
-        {/* ⭐ Junior Player Detected Banner */}
+        {/* Junior Player Banner */}
         {childDob && (
           <div className="mb-6 p-4 bg-brand/10 border border-brand/30 rounded-xl text-brand-light text-sm shadow-md animate-fadeIn">
             <p className="font-semibold text-base mb-1">Junior Player Detected</p>
