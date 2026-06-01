@@ -17,13 +17,17 @@ export default function StagingAccessGate({ children }) {
   const correctCode = process.env.NEXT_PUBLIC_STAGING_ACCESS_CODE;
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    if (code === correctCode) {
-      setEntered(true);
-    } else {
-      setError('Incorrect code');
-    }
-  };
+  e.preventDefault();
+  if (code === correctCode) {
+    // ⭐ This is the new line — it tells the server you’re allowed in
+    document.cookie = "staging_access=true; path=/";
+
+    setEntered(true);
+  } else {
+    setError('Incorrect code');
+  }
+};
+
 
   if (entered) return children;
 
