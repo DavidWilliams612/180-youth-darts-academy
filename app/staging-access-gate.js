@@ -2,35 +2,25 @@
 
 import { useState } from 'react';
 
-export default function StagingAccessGate({ children }) {
-  const [entered, setEntered] = useState(false);
+export default function StagingAccessGate() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-
-  // 🔍 Diagnostic logs — this is what we need to see in the browser console
-  console.log('🔍 Environment check:');
-  console.log('NEXT_PUBLIC_VERCEL_ENV:', process.env.NEXT_PUBLIC_VERCEL_ENV);
-  console.log('NEXT_PUBLIC_STAGING_ACCESS_CODE:', process.env.NEXT_PUBLIC_STAGING_ACCESS_CODE);
-  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
   const correctCode = process.env.NEXT_PUBLIC_STAGING_ACCESS_CODE;
 
   const handleSubmit = (e) => {
-  e.preventDefault();
-  if (code === correctCode) {
-    // ⭐ This is the new line — it tells the server you’re allowed in
-    document.cookie = "staging_access=true; path=/; max-age=3600";
+    e.preventDefault();
 
+    if (code === correctCode) {
+      // Set cookie for 1 hour
+      document.cookie = "staging_access=true; path=/; max-age=3600";
 
-    setEntered(true);
-  } else {
-    setError('Incorrect code');
-  }
-};
-
-
-  if (entered) return children;
+      // ⭐ Redirect so middleware can let them through
+      window.location.href = "/";
+    } else {
+      setError("Incorrect code");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white px-6">
@@ -41,6 +31,8 @@ export default function StagingAccessGate({ children }) {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
+            id="access-code"
+            name="access-code"
             type="password"
             placeholder="Enter access code"
             value={code}
