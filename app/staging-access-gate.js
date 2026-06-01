@@ -20,7 +20,8 @@ export default function StagingAccessGate({ children }) {
   e.preventDefault();
   if (code === correctCode) {
     // ⭐ This is the new line — it tells the server you’re allowed in
-    document.cookie = "staging_access=true; path=/";
+    document.cookie = "staging_access=true; path=/; max-age=3600";
+
 
     setEntered(true);
   } else {
