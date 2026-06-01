@@ -1,4 +1,4 @@
-export default function proxy(request) {
+export default async function proxy(request) {
   const url = new URL(request.url);
 
   // Only apply on staging domain
@@ -6,10 +6,14 @@ export default function proxy(request) {
     const hasAccess = request.cookies.get('staging_access');
 
     if (!hasAccess) {
-      url.pathname = '/staging-access';
-      return Response.rewrite(url);
+      // Rewrite to the staging access page
+      return new Response(null, {
+        status: 307,
+        headers: { Location: '/staging-access' },
+      });
     }
   }
 
-  return Response.next();
+  // Allow normal requests
+  return new Response(null, { status: 200 });
 }
