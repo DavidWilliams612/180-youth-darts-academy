@@ -5,8 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClientBrowser } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import UnreadNewsCount from "@/components/UnreadNewsCount";
-
-// ⭐ NEW: use the session from ClientRoot
 import { useSession } from "@/app/ClientRoot";
 
 export default function AppLayout({ children, navItems }) {
