@@ -31,6 +31,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "app/api/proxy/route.js"
-  ],
+, "app/admin/groups/page.jsx", "app/admin/groups/[id]/page.jsx"  ],
   "exclude": ["node_modules", ".next"]
 }

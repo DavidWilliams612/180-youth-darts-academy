@@ -6,41 +6,26 @@ import { createClientBrowser } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import UnreadNewsCount from "@/components/UnreadNewsCount";
 
+// ⭐ NEW: use the session from ClientRoot
+import { useSession } from "@/app/ClientRoot";
+
 export default function AppLayout({ children, navItems }) {
   const supabase = createClientBrowser();
   const pathname = usePathname();
   const router = useRouter();
 
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // ⭐ Read the session directly from ClientRoot
+  const session = useSession();
+  const role = session?.user?.user_metadata?.role || null;
+
+  // ⭐ No loading state needed anymore
   const [pendingSessionsState, setPendingSessionsState] = useState(0);
 
-  // 🔹 Never block UI: always clear loading, even if no session
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadUser() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-
-      const user = session?.user || null;
-      setRole(user?.user_metadata?.role || null);
-      setLoading(false);
-    }
-
-    loadUser();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+  // 🔹 Load pending sessions (this is fine to keep)
   useEffect(() => {
     let mounted = true;
 
     async function updatePendingSessions() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-
       const user = session?.user;
       if (!user) {
         setPendingSessionsState(0);
@@ -63,7 +48,7 @@ export default function AppLayout({ children, navItems }) {
         .select("status")
         .eq("player_id", player.id);
 
-      const pending = sessions.filter((s) => s.status === "pending").length;
+      const pending = sessions?.filter((s) => s.status === "pending").length || 0;
       setPendingSessionsState(pending);
     }
 
@@ -71,16 +56,7 @@ export default function AppLayout({ children, navItems }) {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  if (loading) {
-    // This should now be very brief, not infinite
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white/70">
-        Loading…
-      </div>
-    );
-  }
+  }, [session]);
 
   const renderNavItem = (item) => {
     const { href, label, id } = item;
