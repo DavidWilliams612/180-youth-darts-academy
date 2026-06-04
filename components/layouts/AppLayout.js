@@ -12,23 +12,17 @@ export default function AppLayout({ children, navItems }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // ⭐ Read the session directly from ClientRoot
   const session = useSession();
   const role = session?.user?.user_metadata?.role || null;
 
-  // ⭐ No loading state needed anymore
   const [pendingSessionsState, setPendingSessionsState] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // 🔹 Load pending sessions (this is fine to keep)
+  // Load pending sessions
   useEffect(() => {
-    let mounted = true;
-
     async function updatePendingSessions() {
       const user = session?.user;
-      if (!user) {
-        setPendingSessionsState(0);
-        return;
-      }
+      if (!user) return setPendingSessionsState(0);
 
       const { data: player } = await supabase
         .from("players")
@@ -36,10 +30,7 @@ export default function AppLayout({ children, navItems }) {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!player) {
-        setPendingSessionsState(0);
-        return;
-      }
+      if (!player) return setPendingSessionsState(0);
 
       const { data: sessions } = await supabase
         .from("session_invited_players")
@@ -51,9 +42,6 @@ export default function AppLayout({ children, navItems }) {
     }
 
     updatePendingSessions();
-    return () => {
-      mounted = false;
-    };
   }, [session]);
 
   const renderNavItem = (item) => {
@@ -66,19 +54,15 @@ export default function AppLayout({ children, navItems }) {
       cleanPath === cleanHref ||
       cleanPath.startsWith(cleanHref + "/");
 
-    if (cleanHref === "/admin" && cleanPath !== "/admin") {
-      isActive = false;
-    }
-
-    if (cleanHref === "/dashboard" && cleanPath !== "/dashboard") {
-      isActive = false;
-    }
+    if (cleanHref === "/admin" && cleanPath !== "/admin") isActive = false;
+    if (cleanHref === "/dashboard" && cleanPath !== "/dashboard") isActive = false;
 
     return (
       <div key={href} className="flex items-center gap-2 justify-between">
         <Link
           href={href}
           prefetch={false}
+          onClick={() => setMobileOpen(false)}
           className={`block px-4 py-2 rounded-md text-sm transition ${
             isActive
               ? "bg-brand text-white shadow-[var(--brand-glow)]"
@@ -95,17 +79,7 @@ export default function AppLayout({ children, navItems }) {
         )}
 
         {href === "/dashboard/sessions" && pendingSessionsState > 0 && (
-          <span
-            className="
-              bg-[#ff4b4b]
-              text-black
-              text-xs
-              px-2
-              py-0.5
-              rounded-full
-              shadow-[0_0_6px_rgba(255,75,75,0.6)]
-            "
-          >
+          <span className="bg-[#ff4b4b] text-black text-xs px-2 py-0.5 rounded-full shadow-[0_0_6px_rgba(255,75,75,0.6)]">
             {pendingSessionsState}
           </span>
         )}
@@ -115,7 +89,62 @@ export default function AppLayout({ children, navItems }) {
 
   return (
     <div className="min-h-screen w-full bg-180 flex text-white">
-      <aside className="w-64 border-r border-white/10 bg-brand-accent/10 backdrop-blur-md p-6 flex flex-col">
+
+      {/* ⭐ Mobile top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between p-4 bg-brand-accent/20 backdrop-blur-md border-b border-white/10">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="text-white text-2xl"
+        >
+          ☰
+        </button>
+
+        <Link href="/" prefetch={false} className="flex items-center gap-3">
+          <img
+            src="/academy/logo.jpg"
+            alt="Academy Logo"
+            className="w-10 h-10 rounded-lg object-cover"
+          />
+          <span className="text-lg font-bold uppercase tracking-wide">
+            180 Darts Academy
+          </span>
+        </Link>
+      </div>
+
+      {/* ⭐ Mobile drawer backdrop */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/60 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ⭐ Mobile drawer */}
+      <div
+        className={`
+          md:hidden fixed top-0 left-0 h-full w-64 z-50
+          bg-brand-accent/10 backdrop-blur-md border-r border-white/10 p-6
+          transform transition-transform duration-300
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <nav className="flex flex-col gap-2 mt-14">
+          {navItems.map(renderNavItem)}
+        </nav>
+
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.replace("/auth/login");
+          }}
+          className="mt-8 px-4 py-2 text-left text-sm text-white/60 hover:text-white transition cursor-pointer"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* ⭐ Desktop sidebar */}
+      <aside className="hidden md:flex w-64 border-r border-white/10 bg-brand-accent/10 backdrop-blur-md p-6 flex-col">
         <div className="flex flex-col gap-6">
           <Link href="/" prefetch={false} className="flex items-center gap-3 group">
             <img
@@ -129,7 +158,7 @@ export default function AppLayout({ children, navItems }) {
           </Link>
 
           <nav className="flex flex-col gap-2">
-            {navItems.map(item => renderNavItem(item))}
+            {navItems.map(renderNavItem)}
           </nav>
         </div>
 
@@ -144,10 +173,9 @@ export default function AppLayout({ children, navItems }) {
         </button>
       </aside>
 
-      <main className="flex-1 p-10">
-        <div className="w-full">
-          {children}
-        </div>
+      {/* ⭐ Main content */}
+      <main className="flex-1 p-10 mt-14 md:mt-0">
+        <div className="w-full">{children}</div>
       </main>
     </div>
   );
