@@ -12,8 +12,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="min-h-screen text-white">
         {/* <FetchLogger /> */}
-        <ClientRoot /> {/* ⭐ all global client logic lives here */}
-        {children}
+        <ClientRoot>
+          {children}
+        </ClientRoot>
       </body>
     </html>
   );
